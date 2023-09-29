@@ -19,14 +19,14 @@ fi
 
 UTIL_SUFFIX=
 if [[ -z ${LLVM:-} ]]; then
-	UTIL_PREFIX=${CROSS_COMPILE:-}
+       UTIL_PREFIX=${CROSS_COMPILE:-}
 else
-	UTIL_PREFIX=llvm-
-	if [[ ${LLVM} == */ ]]; then
-		UTIL_PREFIX=${LLVM}${UTIL_PREFIX}
-	elif [[ ${LLVM} == -* ]]; then
-		UTIL_SUFFIX=${LLVM}
-	fi
+       UTIL_PREFIX=llvm-
+       if [[ ${LLVM} == */ ]]; then
+               UTIL_PREFIX=${LLVM}${UTIL_PREFIX}
+       elif [[ ${LLVM} == -* ]]; then
+               UTIL_SUFFIX=${LLVM}
+       fi
 fi
 
 READELF=${UTIL_PREFIX}readelf${UTIL_SUFFIX}
@@ -162,9 +162,7 @@ parse_symbol() {
 		local code=${cache[$module,$address]}
 	else
 		local code=$(${ADDR2LINE} -i -e "$objfile" "$address" 2>/dev/null)
-		if [[ $aarray_support == true ]]; then
-			cache[$module,$address]=$code
-		fi
+		cache[$module,$address]=$code
 	fi
 
 	# addr2line doesn't return a proper error code if it fails, so
