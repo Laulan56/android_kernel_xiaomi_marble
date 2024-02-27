@@ -807,7 +807,7 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			CAM_DBG(CAM_OIS, "apply Init settings success");
 		}
 
-		if (o_ctrl->is_ois_calib) {
+		if (o_ctrl->is_ois_calib && 1 == o_ctrl->i2c_calib_data.is_settings_valid) {
 			rc = cam_ois_apply_settings(o_ctrl,
 				&o_ctrl->i2c_calib_data);
 			if ((rc == -EAGAIN) &&
@@ -1229,6 +1229,9 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			o_ctrl->cam_ois_state);
 		}
 		o_ctrl->cam_ois_state = CAM_OIS_CONFIG;
+		break;
+	case CAM_FLUSH_REQ:
+		// ignore the flush cmd
 		break;
 	default:
 		CAM_ERR(CAM_OIS, "invalid opcode");
