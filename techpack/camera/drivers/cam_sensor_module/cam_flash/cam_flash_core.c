@@ -2025,10 +2025,27 @@ int cam_flash_pmic_pkt_parser(struct cam_flash_ctrl *fctrl, void *arg)
 
 int cam_flash_publish_dev_info(struct cam_req_mgr_device_info *info)
 {
+#if IS_ENABLED(CONFIG_ISPV3)
+	struct cam_flash_ctrl *fctrl;
+
+	if (!info) {
+		CAM_ERR(CAM_FLASH, "Invalid Args");
+		return -EINVAL;
+	}
+
+	fctrl = (struct cam_flash_ctrl *)
+		cam_get_device_priv(info->dev_hdl);
+#endif
+
 	info->dev_id = CAM_REQ_MGR_DEVICE_FLASH;
 	strlcpy(info->name, CAM_FLASH_NAME, sizeof(info->name));
 	info->p_delay = CAM_FLASH_PIPELINE_DELAY;
 	info->trigger = CAM_TRIGGER_POINT_SOF;
+#if IS_ENABLED(CONFIG_ISPV3)
+	info->trigger_source = fctrl->trigger_source;
+	info->latest_frame_id = -1;
+#endif
+
 	return 0;
 }
 
