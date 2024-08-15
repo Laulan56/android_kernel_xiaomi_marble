@@ -1602,39 +1602,6 @@ exit:
 	return rc;
 }
 
-static void cvp_mark_fence_command(struct msm_cvp_inst *inst, u64 frame_id)
-{
-	int found = false;
-	struct cvp_fence_queue *q;
-	struct cvp_fence_command *f;
-
-	q = &inst->fence_cmd_queue;
-
-	list_for_each_entry(f, &q->sched_list, list) {
-		if (found) {
-			f->mode = OP_FLUSH;
-			continue;
-		}
-
-		if (f->frame_id >= frame_id) {
-			found = true;
-			f->mode = OP_FLUSH;
-		}
-	}
-
-	list_for_each_entry(f, &q->wait_list, list) {
-		if (found) {
-			f->mode = OP_FLUSH;
-			continue;
-		}
-
-		if (f->frame_id >= frame_id) {
-			found = true;
-			f->mode = OP_FLUSH;
-		}
-	}
-}
-
 int cvp_msm_cvp_handle_syscall(struct msm_cvp_inst *inst, struct eva_kmd_arg *arg)
 {
 	int rc = 0;
