@@ -1635,74 +1635,6 @@ static void cvp_mark_fence_command(struct msm_cvp_inst *inst, u64 frame_id)
 	}
 }
 
-static int cvp_flush_frame(struct msm_cvp_inst *inst, u64 frame_id)
-{
-	int rc = 0;
-	struct msm_cvp_inst *s;
-	struct cvp_fence_queue *q;
-	struct cvp_fence_command *f, *d;
-	u64 ktid;
-
-	if (!inst || !inst->core) {
-		dprintk(CVP_ERR, "%s: invalid params\n", __func__);
-		return -EINVAL;
-	}
-
-	s = cvp_cvp_get_inst_validate(inst->core, inst);
-	if (!s)
-		return -ECONNRESET;
-
-	dprintk(CVP_SESS, "Session %llx, flush frame with id %llu\n",
-			inst, frame_id);
-	q = &inst->fence_cmd_queue;
-
-	mutex_lock(&q->lock);
-	q->mode = OP_DRAINING;
-
-	cvp_mark_fence_command(inst, frame_id);
-
-	list_for_each_entry_safe(f, d, &q->wait_list, list) {
-		if (f->mode != OP_FLUSH)
-			continue;
-
-		ktid = f->pkt->client_data.kdata & (FENCE_BIT - 1);
-
-		dprintk(CVP_SYNX, "%s: flush frame %llu %llu from wait_list\n",
-			__func__, ktid, f->frame_id);
-
-		list_del_init(&f->list);
-		cvp_msm_cvp_unmap_frame(inst, f->pkt->client_data.kdata);
-		cvp_cancel_synx(inst, CVP_OUTPUT_SYNX, f,
-				SYNX_STATE_SIGNALED_CANCEL);
-		cvp_release_synx(inst, f);
-		cvp_free_fence_data(f);
-	}
-
-	list_for_each_entry(f, &q->sched_list, list) {
-		if (f->mode != OP_FLUSH)
-			continue;
-
-		ktid = f->pkt->client_data.kdata & (FENCE_BIT - 1);
-
-		dprintk(CVP_SYNX, "%s: flush frame %llu %llu from sched_list\n",
-			__func__, ktid, f->frame_id);
-		cvp_cancel_synx(inst, CVP_INPUT_SYNX, f,
-				SYNX_STATE_SIGNALED_CANCEL);
-	}
-
-	mutex_unlock(&q->lock);
-
-	rc = cvp_drain_fence_cmd_queue_partial(inst);
-	if (rc)
-		dprintk(CVP_WARN, "%s: continue flush. rc %d\n",
-		__func__, rc);
-
-	rc = cvp_flush_all(inst);
-
-	cvp_put_inst(s);
-	return rc;
-}
-
 int cvp_msm_cvp_handle_syscall(struct msm_cvp_inst *inst, struct eva_kmd_arg *arg)
 {
 	int rc = 0;
@@ -1790,7 +1722,8 @@ int cvp_msm_cvp_handle_syscall(struct msm_cvp_inst *inst, struct eva_kmd_arg *ar
 		rc = cvp_flush_all(inst);
 		break;
 	case EVA_KMD_FLUSH_FRAME:
-		rc = cvp_flush_frame(inst, arg->data.frame_id);
+		dprintk(CVP_WARN, "EVA_KMD_FLUSH_FRAME IOCTL deprecated\n");
+		rc = 0;
 		break;
 	default:
 		dprintk(CVP_HFI, "%s: unknown arg type %#x\n",
